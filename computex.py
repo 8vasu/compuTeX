@@ -20,10 +20,14 @@ import sys
 import argparse
 from sympy import Matrix
 from sympy.parsing.latex import parse_latex
+from sympy.parsing.sympy_parser import parse_expr
 from sympy.printing.latex import latex
+from sympy.simplify.simplify import simplify
 from random import choice
 from string import ascii_lowercase
 from sympy import UnevaluatedExpr
+from re import split as re_split
+import itertools
 
 MATRIX_DELIM = {"\\left(\\begin{matrix}": "\\end{matrix}\\right)",
                 "\\left[\\begin{matrix}": "\\end{matrix}\\right]",
@@ -54,8 +58,17 @@ def uniformize_matrix_delimiters(latex_str, uniform_begin, uniform_end):
         latex_str = latex_str.replace(end_delim, uniform_end)
     return latex_str
 
+def fix_substring_order(input_str, correct_order_list):
+    """Fix the order of substrings in input_str to
+    match correct_order_list."""
+    l = re_split("|".join(correct_order_list), input_str)
+    z = itertools.zip_longest(l, correct_order_list)
+    return "".join([x for x in itertools.chain.from_iterable(z) if x])
+
 def parse_latex_extended(latex_str):
     """Add matrix parsing to SymPy's parse_latex."""
+    original_latex_str = latex_str
+
     # uniform_begin = "<<<<<<<<<<"
     # uniform_end = ">>>>>>>>>>"
 
@@ -71,7 +84,30 @@ def parse_latex_extended(latex_str):
         b = latex_str.find(uniform_begin)
         e = latex_str.find(uniform_end)
         if b == -1 and e == -1:
-            return parse_latex(latex_str), matrices
+            # all matrices have been parsed
+
+            # Unfortunately, parse_latex does not know that the new
+            # variables are matrices and changes their multiplication
+            # order. It is also strange that this reordering is not
+            # the same every time, which might have something to do
+            # with sorting variables by name in alphabetical order and
+            # the fact that our variable names are random strings.
+            # We will have to fix the order here.
+            sympy_expr = parse_latex(latex_str)
+            sympy_str = str(sympy_expr)
+            sympy_str = fix_substring_order(sympy_str, used_var_names)
+
+            # Unfortunately, parse_expr also has the same above mentioned
+            # flaw as parse_latex, so we will not perform the following now:
+            # parse_expr(sympy_str).subs(matrices)
+            #
+            # Instead, we will replace the varibles with the corresponding
+            # matrices in sympy_str and then call parse_expr.
+            for var_name in matrices:
+                sympy_str = sympy_str.replace(var_name,
+                                              str(matrices[var_name]))
+            return parse_expr(sympy_str)
+
         if (b != -1 and e == -1) or (b == -1 and e != -1):
             print("Mismatched matrix delimiters.", file=sys.stderr)
             sys.exit(1)
@@ -84,7 +120,8 @@ def parse_latex_extended(latex_str):
         after_matrix = latex_str[e2:]
 
         new_matrix_name = gen_var_name()
-        while new_matrix_name in used_var_names:
+        while ((new_matrix_name in used_var_names)
+               or (new_matrix_name in original_latex_str)):
             new_matrix_name = gen_var_name()
         used_var_names.append(new_matrix_name)
 
@@ -104,6 +141,20 @@ parser.add_argument("-b", "--bmatrix",
 instead of the default ().""",
                     action='store_const',
                     const=True, default=False)
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-E", "--expand",
+                    help="""Try to expand output.""",
+                    action='store_const',
+                    const=True, default=False)
+group.add_argument("-f", "--factorize",
+                    help="""Try to factorize output.""",
+                    action='store_const',
+                    const=True, default=False)
+parser.add_argument("-s", "--simplify",
+                    help="""Try to simplify output. The simplification
+will be done after expansion or factorization.""",
+                    action='store_const',
+                    const=True, default=False)
 parser.add_argument("latex_expr",
                     help="LaTeX math expression.",
                     nargs="?", default=None)
@@ -114,9 +165,17 @@ if args.latex_expr == None:
 else:
     latex_expr = args.latex_expr
 
-sympy_expr, matrices = parse_latex_extended(latex_expr)
-simplified_sympy_expr = sympy_expr.subs(matrices).doit().doit()
-simplified_latex_expr = latex(simplified_sympy_expr)
+sympy_expr = parse_latex_extended(latex_expr)
+evaluated_sympy_expr = sympy_expr.doit()
+
+if args.expand:
+    evaluated_sympy_expr = evaluated_sympy_expr.expand()
+if args.factorize:
+    evaluated_sympy_expr = evaluated_sympy_expr.factor()
+if args.simplify:
+    evaluated_sympy_expr = simplify(evaluated_sympy_expr)
+
+evaluated_latex_expr = latex(evaluated_sympy_expr)
 
 output_matrix_begin = "\\begin{pmatrix}"
 output_matrix_end = "\\end{pmatrix}"
@@ -124,10 +183,10 @@ if args.bmatrix:
     output_matrix_begin = "\\begin{bmatrix}"
     output_matrix_end = "\\end{bmatrix}"
 
-simplified_latex_expr = uniformize_matrix_delimiters(simplified_latex_expr,
+evaluated_latex_expr = uniformize_matrix_delimiters(evaluated_latex_expr,
                                                      output_matrix_begin,
                                                      output_matrix_end)
 if args.equation_form:
-    print(f"{latex_expr} = {simplified_latex_expr}", end="")
+    print(f"{latex_expr} = {evaluated_latex_expr}", end="")
 else:
-    print(f"{simplified_latex_expr}", end="")
+    print(f"{evaluated_latex_expr}", end="")

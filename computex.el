@@ -18,6 +18,28 @@
   "convert LaTeX -> SymPy -> evaluate -> LaTeX"
   (interactive "r")
   (let ((tex-code (buffer-substring start end)))
-    (if (y-or-n-p "Replace region? ")
-        (call-process-region start end "computex.py" t t nil "-e" tex-code)
-      (call-process-region start end "computex.py" nil t nil "-e" tex-code))))
+    (call-process-region start end "computex.py" t t nil "-e" tex-code)))
+
+(defun sgang-tex-computex-expand (start end)
+  "convert LaTeX -> SymPy -> evaluate, expand -> LaTeX"
+  (interactive "r")
+  (let ((tex-code (buffer-substring start end)))
+    (call-process-region start end "computex.py" t t nil "-e" "-E" tex-code)))
+
+(defun sgang-tex-computex-factorize (start end)
+  "convert LaTeX -> SymPy -> evaluate, factorize -> LaTeX"
+  (interactive "r")
+  (let ((tex-code (buffer-substring start end)))
+    (call-process-region start end "computex.py" t t nil "-e" "-f" tex-code)))
+
+(defun sgang-tex-computex-simplify (start end)
+  "convert LaTeX -> SymPy -> evaluate, simplify -> LaTeX"
+  (interactive "r")
+  (let ((tex-code (buffer-substring start end)))
+    (call-process-region start end "computex.py" t t nil "-e" "-s" tex-code)))
+
+(defvar sgang-computex-map (make-sparse-keymap))
+(define-key sgang-computex-map (kbd "z") 'sgang-tex-computex)
+(define-key sgang-computex-map (kbd "e") 'sgang-tex-computex-expand)
+(define-key sgang-computex-map (kbd "f") 'sgang-tex-computex-factorize)
+(define-key sgang-computex-map (kbd "s") 'sgang-tex-computex-simplify)

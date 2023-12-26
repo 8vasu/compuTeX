@@ -56,31 +56,37 @@ If you are using Windows and do not have `cat`, then try using the `type` comman
 ## Setup for GNU Emacs
 This step is optional.
 
-1. Copy the definition of the function `sgang-tex-computex` in `computex.el` to your emacs Initialization File.
-2. If you wish the functionality to be available in all buffers, then add
+1. Add the following to your emacs Initialization File:
    ```elisp
-   (global-set-key (kbd "C-`") 'sgang-tex-computex)
+   (setq computex-file ("/path/to/computex.el"))
+   (if (file-exists-p computex-file)
+       (load computex-file))
+   ```
+2. If you wish the key bindings to be available in all buffers, then add
+   ```elisp
+   (global-set-key (kbd "C-`") sgang-computex-map)
    ```
    to your emacs Initialization File. If you are using emacs 29 or above, then consider using
    `keymap-global-set` instead of `global-set-key`.
 
-	If you wish the functionality to be available only in `latex-mode` of
+	If you wish the key bindings to be available only in `latex-mode` of
 	[AUCTeX](https://www.gnu.org/software/auctex/), then add the following
 	to your emacs Initialization File instead:
 	```elisp
 	(eval-after-load 'latex
-	  '(define-key LaTeX-mode-map (kbd "C-`") 'sgang-tex-computex))
+	  '(define-key LaTeX-mode-map (kbd "C-`") sgang-computex-map))
 	```
 3. Optional: Change the ``"C-`"`` above to any key you wish.
 
 ## GNU Emacs usage
 
 1. Select the LaTeX code to evaluate (excluding any `$`-sign or other math delimiters).
-2. Call the function `sgang-tex-computex` using either `M-x sgang-tex-computex`
-   or by using any key bound to `sgang-tex-computex`.
-3. If you wish to replace the selected region with the output, then press `y`. If you
-   wish to insert the ouput into the buffer but also retain the original selected region,
-   then press `n`.
+2. Call any of the functions `sgang-tex-computex-*` defined in `computex.el`. Assuming
+   that ``C-` `` is bound to `sgang-computex-map`, type ``C-` `` followed by:
+   - the key `z` for `sgang-tex-computex` corresponding to `computex.py -e`,
+   - the key `e` for `sgang-tex-computex-expand` corresponding to `computex.py -e -E`,
+   - the key `f` for `sgang-tex-compute-factorize` corresponding to `computex.py -e -f`,
+   - the key `s` for `sgang-tex-compute-simplify` corresponding to `computex.py -e -s`.
 
 ![emacs_demo.gif!](./emacs_demo.gif)
 
