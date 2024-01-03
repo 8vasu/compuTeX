@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # compuTeX - Convert LaTeX -> SymPy -> evaluate -> LaTeX.
-# Copyright (C) 2023 Soumendra Ganguly
+# Copyright (C) 2023-2024 Soumendra Ganguly
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
