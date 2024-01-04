@@ -56,25 +56,25 @@ If you are using Windows and do not have `cat`, then try using the `type` comman
 ## Setup for GNU Emacs
 This step is optional.
 
-1. Add the following to your emacs Initialization File:
+1. If you wish the key bindings to be available in all buffers, then add
+   the following to your emacs Initialization File:
    ```elisp
-   (setq computex-file ("/path/to/computex.el"))
+   (setq computex-file "/path/to/computex.el")
    (if (file-exists-p computex-file)
-       (load computex-file))
+       (progn (load computex-file)
+              (global-set-key (kbd "C-`") sgang-computex-map)))
    ```
-2. If you wish the key bindings to be available in all buffers, then add
-   ```elisp
-   (global-set-key (kbd "C-`") sgang-computex-map)
-   ```
-   to your emacs Initialization File. If you are using emacs 29 or above, then consider using
-   `keymap-global-set` instead of `global-set-key`.
-
-	If you wish the key bindings to be available only in `latex-mode` of
-	[AUCTeX](https://www.gnu.org/software/auctex/), then add the following
-	to your emacs Initialization File instead:
+   If you are using emacs 29 or above, then consider using `keymap-global-set`
+   instead of `global-set-key`.
+2. If you wish the key bindings to be available only in `latex-mode` of
+   [AUCTeX](https://www.gnu.org/software/auctex/), then add the following
+   to your emacs Initialization File instead:
 	```elisp
-	(eval-after-load 'latex
-	  '(define-key LaTeX-mode-map (kbd "C-`") sgang-computex-map))
+   (setq computex-file "/path/to/computex.el")
+   (if (file-exists-p computex-file)
+       (progn (load computex-file)
+              (eval-after-load 'latex
+                '(define-key LaTeX-mode-map (kbd "C-`") sgang-computex-map))))
 	```
 3. Optional: Change the ``"C-`"`` above to any key you wish.
 
